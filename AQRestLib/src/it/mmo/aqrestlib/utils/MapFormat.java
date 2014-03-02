@@ -1,4 +1,4 @@
-package it.mmo.aqrestlib.rest;
+package it.mmo.aqrestlib.utils;
 
 import java.text.DateFormat;
 import java.text.FieldPosition;

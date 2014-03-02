@@ -1,4 +1,4 @@
-package it.mmo.aqrestlib.rest;
+package it.mmo.aqrestlib.rest.api;
 
 import org.json.JSONObject;
 
