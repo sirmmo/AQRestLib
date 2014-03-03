@@ -3,9 +3,9 @@ package it.mmo.aqrestlib.rest;
 import it.mmo.aqrestlib.R;
 import it.mmo.aqrestlib.R.string;
 import it.mmo.aqrestlib.framework.DefaultActivity;
-import it.mmo.aqrestlib.rest.api.JSONError;
-import it.mmo.aqrestlib.rest.api.RestCallback;
-import it.mmo.aqrestlib.rest.api.RestError;
+import it.mmo.aqrestlib.rest.callbacks.JSONError;
+import it.mmo.aqrestlib.rest.callbacks.RestCallback;
+import it.mmo.aqrestlib.rest.callbacks.RestError;
 import it.mmo.aqrestlib.utils.MapFormat;
 
 import java.util.Arrays;

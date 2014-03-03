@@ -1,4 +1,4 @@
-package it.mmo.aqrestlib.rest.api;
+package it.mmo.aqrestlib.rest.callbacks;
 
 import org.json.JSONObject;
 
