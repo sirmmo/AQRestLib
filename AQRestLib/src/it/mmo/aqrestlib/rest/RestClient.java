@@ -3,6 +3,7 @@ package it.mmo.aqrestlib.rest;
 import it.mmo.aqrestlib.R;
 import it.mmo.aqrestlib.R.string;
 import it.mmo.aqrestlib.framework.DefaultActivity;
+import it.mmo.aqrestlib.rest.callbacks.DialogCallback;
 import it.mmo.aqrestlib.rest.callbacks.JSONError;
 import it.mmo.aqrestlib.rest.callbacks.RestCallback;
 import it.mmo.aqrestlib.rest.callbacks.RestError;
@@ -125,15 +126,14 @@ public abstract class RestClient {
 	}
 
 	public void call(final RestCallback restCallback) {
-		this.call(restCallback, null, null);
+		this.call(restCallback, null, null, null);
 	}
 
-	public void call(final RestCallback restCallback, final RestError restError, final JSONError jsonError) {
+	public void call(final RestCallback restCallback, final RestError restError, final JSONError jsonError, final DialogCallback dialog) {
 		try {
 			try {
-				DefaultActivity act = (DefaultActivity) context;
-				//if(show_load)
-				//	act.openLoadingDialog();
+				if(dialog != null)
+					dialog.openLoadingDialog();
 			} catch (Exception e) {
 			}
 			checkParams();
@@ -144,8 +144,8 @@ public abstract class RestClient {
 				public void callback(String url, String json, AjaxStatus status) {
 					try {
 						DefaultActivity act = (DefaultActivity) context;
-						//if(show_load)
-						//	act.closeLoadingDialog();
+						if(dialog != null)
+							dialog.closeLoadingDialog();
 					} catch (Exception e) {
 					}
 					Log.d("URL", url);
