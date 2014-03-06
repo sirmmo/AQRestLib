@@ -39,8 +39,15 @@ public abstract class RestClient {
 
 	private Map<String, String> urlParts = new HashMap<String, String>();
 	private Map<String, String> urlParams = new HashMap<String, String>();
+	private Map<String, String> headers = new HashMap<String, String>();
 
-	// super(context, "", new String[]{""}, new String[]{""});
+	/***
+	 * super(context, "", new String[]{""}, new String[]{""});
+	 * @param context the app context
+	 * @param url is the url for the call
+	 * @param urlParts array of part name
+	 * @param params array of parameters
+	 */
 	public RestClient(Context context, String url, String urlParts[],
 			String params[]) {
 		aq = new AQuery(context);
@@ -50,7 +57,10 @@ public abstract class RestClient {
 		this.urlPartsTemplate = urlParts;
 		this.urlParamsTemplate = params;
 	}
-
+/***
+ * Sets if a given set of parameters should be tested or not
+ * @param do_no_check
+ */
 	protected void setCheck(boolean do_no_check){
 		no_check = !do_no_check;
 	}
@@ -60,6 +70,12 @@ public abstract class RestClient {
 		if (!no_check || Arrays.asList(urlParamsTemplate).contains(key))
 			Log.d("SET", value);
 			this.urlParams.put(key, value);
+		return this;
+	}
+	
+	public RestClient setHeader(String key, String value){
+		Log.d(key, value);
+		this.headers.put(key, value);
 		return this;
 	}
 
@@ -140,6 +156,7 @@ public abstract class RestClient {
 			String iurl = active_domain + MapFormat.format(url, urlParts);
 			Log.d("URL - REQ", iurl);
 			Log.d("URL - POST", urlParams.toString());
+			
 			aq.ajax(iurl, urlParams, String.class, new AjaxCallback<String>() {
 				public void callback(String url, String json, AjaxStatus status) {
 					try {
