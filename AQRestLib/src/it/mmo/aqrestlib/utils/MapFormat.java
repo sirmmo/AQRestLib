@@ -48,7 +48,7 @@ public class MapFormat extends Format {
     private String rdel = "}"; // NOI18N
 
     /** Used formatting map */
-    private Map argmap;
+    private Map<?,?> argmap;
 
     /** Offsets to {} expressions */
     private int[] offsets;
@@ -70,7 +70,7 @@ public class MapFormat extends Format {
     * For common work use  <code>format(pattern, arguments) </code>.
     * @param arguments keys and values to use in the format
     */
-    public MapFormat(Map arguments) {
+    public MapFormat(Map<?,?> arguments) {
         super();
         setMap(arguments);
     }
@@ -84,7 +84,7 @@ public class MapFormat extends Format {
     * @param arguments Map with key-value pairs to replace.
     * @return Formatted string
     */
-    public static String format(String pattern, Map arguments) {
+    public static String format(String pattern, Map<?,?> arguments) {
         MapFormat temp = new MapFormat(arguments);
 
         return temp.format(pattern);
@@ -287,7 +287,7 @@ public class MapFormat extends Format {
     */
     public String parse(String source) {
         StringBuffer sbuf = new StringBuffer(source);
-        Iterator key_it = argmap.keySet().iterator();
+        Iterator<?> key_it = argmap.keySet().iterator();
 
         //skipped = new RangeList();
         // What was this for??
@@ -372,7 +372,7 @@ public class MapFormat extends Format {
     }
 
     /** Returns argument map */
-    public Map getMap() {
+    public Map<?,?> getMap() {
         return argmap;
     }
 
@@ -384,7 +384,7 @@ public class MapFormat extends Format {
     *
     * @param map the argument map
     */
-    public void setMap(Map map) {
+    public void setMap(Map<?,?> map) {
         argmap = map;
     }
 

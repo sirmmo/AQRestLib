@@ -1,6 +1,5 @@
 <resources>
 
     <string name="app_name">AQRestLib</string>
-    <string name="server_url">http://www.google.com</string>
 
 </resources>

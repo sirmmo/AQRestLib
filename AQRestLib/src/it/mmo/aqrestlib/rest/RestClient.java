@@ -1,12 +1,10 @@
 package it.mmo.aqrestlib.rest;
 
-import it.mmo.aqrestlib.R;
-import it.mmo.aqrestlib.R.string;
-import it.mmo.aqrestlib.framework.DefaultActivity;
 import it.mmo.aqrestlib.rest.callbacks.DialogCallback;
 import it.mmo.aqrestlib.rest.callbacks.JSONError;
 import it.mmo.aqrestlib.rest.callbacks.RestCallback;
 import it.mmo.aqrestlib.rest.callbacks.RestError;
+import it.mmo.aqrestlib.rest.objectmodel.UrlManager;
 import it.mmo.aqrestlib.utils.MapFormat;
 
 import java.util.Arrays;
@@ -33,8 +31,7 @@ public abstract class RestClient {
 	private String[] urlPartsTemplate;
 	private String[] urlParamsTemplate;
 	private String url = "";
-	private boolean show_load = true;
-	
+
 	private boolean no_check = false;
 
 	private Map<String, String> urlParts = new HashMap<String, String>();
@@ -43,37 +40,44 @@ public abstract class RestClient {
 
 	/***
 	 * super(context, "", new String[]{""}, new String[]{""});
-	 * @param context the app context
-	 * @param url is the url for the call
-	 * @param urlParts array of part name
-	 * @param params array of parameters
+	 * 
+	 * @param context
+	 *            the app context
+	 * @param url
+	 *            is the url for the call
+	 * @param urlParts
+	 *            array of part name
+	 * @param params
+	 *            array of parameters
 	 */
-	public RestClient(Context context, String url, String urlParts[],
+	public RestClient(Context context, String active_domain, String url, String urlParts[],
 			String params[]) {
 		aq = new AQuery(context);
 		this.context = context;
-		active_domain = context.getString(R.string.server_url);
+		this.active_domain = active_domain;
 		this.url = url;
 		this.urlPartsTemplate = urlParts;
 		this.urlParamsTemplate = params;
 	}
-/***
- * Sets if a given set of parameters should be tested or not
- * @param do_no_check
- */
-	protected void setCheck(boolean do_no_check){
+
+	/***
+	 * Sets if a given set of parameters should be tested or not
+	 * 
+	 * @param do_no_check
+	 */
+	protected void setCheck(boolean do_no_check) {
 		no_check = !do_no_check;
 	}
-	
+
 	public RestClient setParam(String key, String value) {
 		Log.d(key, value);
 		if (!no_check || Arrays.asList(urlParamsTemplate).contains(key))
 			Log.d("SET", value);
-			this.urlParams.put(key, value);
+		this.urlParams.put(key, value);
 		return this;
 	}
-	
-	public RestClient setHeader(String key, String value){
+
+	public RestClient setHeader(String key, String value) {
 		Log.d(key, value);
 		this.headers.put(key, value);
 		return this;
@@ -87,16 +91,21 @@ public abstract class RestClient {
 	}
 
 	public RestClient compileFromGlobalState() {
-		GlobalState state = GlobalState.get();
-		Log.d("STATE", GlobalState.get().toString());
+		UrlManager state = GlobalState.get();
+		this.compileFromGlobalState(state);
+		return this;
+	}
+	
+	public RestClient compileFromGlobalState(UrlManager state) {
+		Log.d("STATE", state.toString());
 		for (String i : urlPartsTemplate) {
 			if (state.hasVar(i)) {
-				this.setUrlPart(i, state.getVar(i));
+				this.setUrlPart(i, state.getString(i));
 			}
 		}
 		for (String i : urlParamsTemplate) {
 			if (state.hasVar(i)) {
-				this.setParam(i, state.getVar(i));
+				this.setParam(i, state.getString(i));
 			}
 		}
 		return this;
@@ -133,7 +142,7 @@ public abstract class RestClient {
 	}
 
 	protected void checkParams() throws RestUrlParameterException {
-		if(!no_check)
+		if (!no_check)
 			for (String p : urlParamsTemplate) {
 				if (!urlParams.containsKey(p))
 					throw new RestUrlParameterException("Il campo " + p
@@ -145,23 +154,21 @@ public abstract class RestClient {
 		this.call(restCallback, null, null, null);
 	}
 
-	public void call(final RestCallback restCallback, final RestError restError, final JSONError jsonError, final DialogCallback dialog) {
+	public void call(final RestCallback restCallback,
+			final RestError restError, final JSONError jsonError,
+			final DialogCallback dialog) {
 		try {
-			try {
-				if(dialog != null)
-					dialog.openLoadingDialog();
-			} catch (Exception e) {
-			}
+			if (dialog != null)
+				dialog.openLoadingDialog();
 			checkParams();
 			String iurl = active_domain + MapFormat.format(url, urlParts);
 			Log.d("URL - REQ", iurl);
 			Log.d("URL - POST", urlParams.toString());
-			
+
 			aq.ajax(iurl, urlParams, String.class, new AjaxCallback<String>() {
 				public void callback(String url, String json, AjaxStatus status) {
 					try {
-						DefaultActivity act = (DefaultActivity) context;
-						if(dialog != null)
+						if (dialog != null)
 							dialog.closeLoadingDialog();
 					} catch (Exception e) {
 					}
@@ -169,29 +176,37 @@ public abstract class RestClient {
 					try {
 						Log.d(url, json);
 					} catch (Exception e) {
-						Log.d(url,status.getCode()+"");
+						Log.d(url, status.getCode() + "");
 					}
 					if (status.getCode() != 200) {
-						Toast.makeText(context, "ERRORE DI RETE", Toast.LENGTH_SHORT).show();
+						Toast.makeText(context, "ERRORE DI RETE",
+								Toast.LENGTH_SHORT).show();
 					} else {
 						JSONObject response;
 						try {
 							response = new JSONObject(json);
-							if (response.has("status") && response.getString("status").equals("error")) {
+							if (response.has("status")
+									&& response.getString("status").equals(
+											"error")) {
 								String message = "";
 								try {
 									StringBuilder messageBuilder = new StringBuilder();
-									JSONObject msg = response.optJSONObject("message");
-									JSONArray msga = response.optJSONArray("message");
+									JSONObject msg = response
+											.optJSONObject("message");
+									JSONArray msga = response
+											.optJSONArray("message");
 									if (msg != null) {
 										Iterator<?> k = msg.keys();
 										while (k.hasNext()) {
-											messageBuilder.append(msg.getString((String) k.next()));
+											messageBuilder.append(msg
+													.getString((String) k
+															.next()));
 										}
 										message = messageBuilder.toString();
 									} else if (msga != null) {
 										for (int i = 0; i < msga.length(); i++) {
-											messageBuilder.append(msga.getString(i));
+											messageBuilder.append(msga
+													.getString(i));
 										}
 										message = messageBuilder.toString();
 									} else {
@@ -204,9 +219,9 @@ public abstract class RestClient {
 								if (restError != null)
 									restError.do_error(response, url);
 							} else {
-								try{
+								try {
 									restCallback.do_callback(response, url);
-								} catch (Exception e){
+								} catch (Exception e) {
 									e.printStackTrace();
 								}
 							}
@@ -225,7 +240,4 @@ public abstract class RestClient {
 		}
 	}
 
-	public void showLoad(boolean show_load) {
-		this.show_load = show_load;
-	}
 }

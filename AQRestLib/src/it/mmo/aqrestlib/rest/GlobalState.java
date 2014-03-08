@@ -1,96 +1,89 @@
 package it.mmo.aqrestlib.rest;
 
+import it.mmo.aqrestlib.rest.objectmodel.UrlManager;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
 
-public class GlobalState {
-
-	public static final String global_name = "field_nome";
-	public static final String active_child = "nid";
-	public static final String active_child_name = "nid_name";
+public class GlobalState implements UrlManager {
 	
-	private static GlobalState _instance;
-	private Map<String,String> _storage;
-	private Map<String,JSONObject> _jstorage;
-	private Map<String, List<String>> _astorage;
+	private static UrlManager _instance;
+	private Map<String, Object> _storage;
+	private Map<String, Class<?>> _cstorage;
 	
 	private GlobalState (){
-		_storage = new HashMap<String, String>();
-		_jstorage = new HashMap<String, JSONObject>();
-		_astorage = new HashMap<String, List<String>>();
+		_storage = new HashMap<String, Object>();
+		_cstorage = new HashMap<String, Class<?>>();
 	}
 	
 	public void clear(){
-		_storage = new HashMap<String, String>();
-		_jstorage = new HashMap<String, JSONObject>();
+		_storage = new HashMap<String, Object>();
+		_cstorage = new HashMap<String, Class<?>>();
 	}
 	
-	public static GlobalState get(){
+	public static UrlManager get(){
 		if (_instance == null){
 			_instance = new GlobalState();
 		}
 		return _instance;
 	}
 	
-	public void setVar(String name, String value){
+	@Override
+	public void setString(String name, String value){
 		_storage.put(name, value);
+		_cstorage.put(name, String.class);
 	}
 	public void setJSON(String name, JSONObject value){
-		_jstorage.put(name, value);
+		_storage.put(name, value);
+		_cstorage.put(name, JSONObject.class);
 	}
 	
 	public void addElement(String list, String value){
-		if (_astorage.containsKey(list)){
+		if (_storage.containsKey(list)){
 		} else {
-			_astorage.put(list, new ArrayList<String>());
+			_storage.put(list, new ArrayList<String>());
 		}
-		_astorage.get(list).add(value);
+		_storage.get(list);
 	}
 	
-	public void removeElement(String list, String value){
-		if (_astorage.containsKey(list))
-			if (_astorage.get(list).contains(value))
-				_astorage.get(list).remove(value);
-	}
-	
-	public String[] getElements(String list){
-		if (_astorage.containsKey(list)){
-			return _astorage.get(list).toArray(new String[1]);
-		} else
-			return new String [0];
-	}
-	
-	public void clearElements(String list){
-		if(_astorage.containsKey(list))
-			_astorage.get(list).clear();
-	}
-
 	public void removeVar(String name){
 		_storage.remove(name);
+		_cstorage.remove(name);
 	}
 	
+	@Override
 	public boolean hasVar(String name){
 		return _storage.containsKey(name);
 	}
 	
-	public String getVar(String name){
-		try{
-			return _storage.get(name);
-		} catch(Exception e){
-			return "";
-		}
+	@Override
+	public String getString(String name){
+		if(_storage.containsKey(name))
+			if(_cstorage.get(name).equals(String.class))
+				return String.class.cast(_storage.get(name));
+		return null;
 	}
-	public JSONObject getJSON(String name){
-		try{
-			return _jstorage.get(name);
-		} catch(Exception e){
-			return new JSONObject();
-		}
+	
+	public JSONObject getJSONObject(String name){
+		if(_storage.containsKey(name))
+			if(_cstorage.get(name).equals(JSONObject.class))
+				return JSONObject.class.cast(_storage.get(name));
+		return null;
 	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getVar(String name){
+		if(_storage.containsKey(name)){
+			Class<?> t = _cstorage.get(name);
+			T cast = (T) t.cast(_storage.get(name));
+			return cast;
+			}
+		return null;
+	}
+	
 	
 	public String toString(){
 		return _storage.toString();
