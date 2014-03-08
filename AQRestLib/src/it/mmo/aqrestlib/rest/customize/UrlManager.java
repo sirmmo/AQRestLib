@@ -1,4 +1,4 @@
-package it.mmo.aqrestlib.rest.objectmodel;
+package it.mmo.aqrestlib.rest.customize;
 
 public interface UrlManager {
 

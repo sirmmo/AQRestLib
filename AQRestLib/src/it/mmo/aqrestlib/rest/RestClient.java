@@ -4,16 +4,14 @@ import it.mmo.aqrestlib.rest.callbacks.DialogCallback;
 import it.mmo.aqrestlib.rest.callbacks.JSONError;
 import it.mmo.aqrestlib.rest.callbacks.RestCallback;
 import it.mmo.aqrestlib.rest.callbacks.RestError;
-import it.mmo.aqrestlib.rest.objectmodel.UrlManager;
+import it.mmo.aqrestlib.rest.customize.UrlManager;
 import it.mmo.aqrestlib.utils.MapFormat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -21,10 +19,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.androidquery.AQuery;
-import com.androidquery.callback.AjaxCallback;
-import com.androidquery.callback.AjaxStatus;
 
-public abstract class RestClient {
+public class RestClient {
 	protected AQuery aq = null;
 	protected String active_domain;
 	private Context context;
@@ -37,26 +33,28 @@ public abstract class RestClient {
 	private Map<String, String> urlParts = new HashMap<String, String>();
 	private Map<String, String> urlParams = new HashMap<String, String>();
 	private Map<String, String> headers = new HashMap<String, String>();
+	private RestMethod restMethod = RestMethod.GET;
+	private DialogCallback dialogCallback;
 
-	/***
-	 * super(context, "", new String[]{""}, new String[]{""});
+	/**
 	 * 
 	 * @param context
-	 *            the app context
+	 * @param active_domain
 	 * @param url
-	 *            is the url for the call
-	 * @param urlParts
-	 *            array of part name
 	 * @param params
-	 *            array of parameters
 	 */
-	public RestClient(Context context, String active_domain, String url, String urlParts[],
+	public RestClient(Context context, String active_domain, String url,
 			String params[]) {
 		aq = new AQuery(context);
 		this.context = context;
 		this.active_domain = active_domain;
 		this.url = url;
-		this.urlPartsTemplate = urlParts;
+		ArrayList<String> strings = new ArrayList<String>();
+		String[] up = url.split("{");
+		for (String up1 : up) {
+			strings.add(up1.split("}")[0]);
+		}
+		this.urlPartsTemplate = strings.toArray(new String[] {});
 		this.urlParamsTemplate = params;
 	}
 
@@ -69,6 +67,12 @@ public abstract class RestClient {
 		no_check = !do_no_check;
 	}
 
+	/**
+	 * 
+	 * @param key
+	 * @param value
+	 * @return this for Fluent pattern
+	 */
 	public RestClient setParam(String key, String value) {
 		Log.d(key, value);
 		if (!no_check || Arrays.asList(urlParamsTemplate).contains(key))
@@ -76,13 +80,24 @@ public abstract class RestClient {
 		this.urlParams.put(key, value);
 		return this;
 	}
-
+	/**
+	 * 
+	 * @param key
+	 * @param value
+	 * @return this for Fluent pattern
+	 */
 	public RestClient setHeader(String key, String value) {
 		Log.d(key, value);
 		this.headers.put(key, value);
 		return this;
 	}
 
+	/**
+	 * 
+	 * @param key
+	 * @param value
+	 * @return this for Fluent pattern
+	 */
 	public RestClient setUrlPart(String key, String value) {
 		Log.d(key, value);
 		if (Arrays.asList(urlPartsTemplate).contains(key))
@@ -90,12 +105,21 @@ public abstract class RestClient {
 		return this;
 	}
 
+	/**
+	 * Compiles the url and params from the global state object
+	 * @return this for Fluent pattern
+	 */
 	public RestClient compileFromGlobalState() {
 		UrlManager state = GlobalState.get();
 		this.compileFromGlobalState(state);
 		return this;
 	}
-	
+
+	/**
+	 * Compiles the url and params from a custom global state object
+	 * @param state the custom global state object
+	 * @return this for Fluent pattern
+	 */
 	public RestClient compileFromGlobalState(UrlManager state) {
 		Log.d("STATE", state.toString());
 		for (String i : urlPartsTemplate) {
@@ -111,6 +135,11 @@ public abstract class RestClient {
 		return this;
 	}
 
+	/**
+	 * Gets the value from the configuration
+	 * @param key
+	 * @return the value for the key
+	 */
 	protected String getPart(String key) {
 		if (urlParts.containsKey(key))
 			return urlParts.get(key);
@@ -118,6 +147,12 @@ public abstract class RestClient {
 			return "";
 	}
 
+
+	/**
+	 * Gets the value from the configuration
+	 * @param key
+	 * @return the value for the key
+	 */
 	protected String getParameter(String key) {
 		if (urlParams.containsKey(key))
 			return urlParams.get(key);
@@ -125,6 +160,7 @@ public abstract class RestClient {
 			return "";
 	}
 
+	
 	public Map<String, String> getUrlParts() {
 		Map<String, String> ret = new HashMap<String, String>();
 		for (String i : urlPartsTemplate) {
@@ -141,103 +177,113 @@ public abstract class RestClient {
 		return ret;
 	}
 
+	/**
+	 * checks the parameters
+	 * @throws RestUrlParameterException
+	 */
 	protected void checkParams() throws RestUrlParameterException {
 		if (!no_check)
 			for (String p : urlParamsTemplate) {
 				if (!urlParams.containsKey(p))
-					throw new RestUrlParameterException("Il campo " + p
-							+ " è obbligatorio");
+					throw new RestUrlParameterException(p);
 			}
 	}
 
-	public void call(final RestCallback restCallback) {
-		this.call(restCallback, null, null, null);
+	/**
+	 * Sets the method
+	 * @param restMethod can be POST, GET, PUT, DELETE.
+	 * @return this for Fluent pattern
+	 */
+	public RestClient setMethod(RestMethod restMethod){
+		this.restMethod = restMethod;
+		return this;
+	}
+	/**
+	 * Sets the Dialog Callback function
+	 * @param dialogCallback
+	 * @return this for Fluent pattern
+	 */
+	public RestClient setDialogCallback(DialogCallback dialogCallback){
+		this.dialogCallback = dialogCallback;
+		return this;
+	}
+	
+	
+	public RestClient call(final RestMethod restMethod, final RestCallback restCallback) {
+		this.call(restMethod, restCallback, null, null, dialogCallback);
+		return this;
 	}
 
-	public void call(final RestCallback restCallback,
-			final RestError restError, final JSONError jsonError,
-			final DialogCallback dialog) {
-		try {
-			if (dialog != null)
-				dialog.openLoadingDialog();
-			checkParams();
-			String iurl = active_domain + MapFormat.format(url, urlParts);
-			Log.d("URL - REQ", iurl);
-			Log.d("URL - POST", urlParams.toString());
+	public RestClient call(final RestMethod restMethod, final RestCallback restCallback, final RestError restError) {
+		this.call(restMethod, restCallback, restError, null, dialogCallback);
+		return this;
+	}
 
-			aq.ajax(iurl, urlParams, String.class, new AjaxCallback<String>() {
-				public void callback(String url, String json, AjaxStatus status) {
-					try {
-						if (dialog != null)
-							dialog.closeLoadingDialog();
-					} catch (Exception e) {
-					}
-					Log.d("URL", url);
-					try {
-						Log.d(url, json);
-					} catch (Exception e) {
-						Log.d(url, status.getCode() + "");
-					}
-					if (status.getCode() != 200) {
-						Toast.makeText(context, "ERRORE DI RETE",
-								Toast.LENGTH_SHORT).show();
-					} else {
-						JSONObject response;
-						try {
-							response = new JSONObject(json);
-							if (response.has("status")
-									&& response.getString("status").equals(
-											"error")) {
-								String message = "";
-								try {
-									StringBuilder messageBuilder = new StringBuilder();
-									JSONObject msg = response
-											.optJSONObject("message");
-									JSONArray msga = response
-											.optJSONArray("message");
-									if (msg != null) {
-										Iterator<?> k = msg.keys();
-										while (k.hasNext()) {
-											messageBuilder.append(msg
-													.getString((String) k
-															.next()));
-										}
-										message = messageBuilder.toString();
-									} else if (msga != null) {
-										for (int i = 0; i < msga.length(); i++) {
-											messageBuilder.append(msga
-													.getString(i));
-										}
-										message = messageBuilder.toString();
-									} else {
-										message = response.getString("message");
-									}
-								} catch (JSONException ex) {
-								}
-								Toast.makeText(context, message,
-										Toast.LENGTH_SHORT).show();
-								if (restError != null)
-									restError.do_error(response, url);
-							} else {
-								try {
-									restCallback.do_callback(response, url);
-								} catch (Exception e) {
-									e.printStackTrace();
-								}
-							}
-						} catch (JSONException e) {
-							if (jsonError != null)
-								jsonError.evaluate_json(json, url);
-							Toast.makeText(context, "ERRORE DI COMUNICAZIONE",
-									Toast.LENGTH_SHORT).show();
-							e.printStackTrace();
-						}
-					}
-				}
-			});
+	public RestClient call(final RestMethod restMethod, final RestCallback restCallback, final RestError restError, final JSONError jsonError) {
+		this.call(restMethod, restCallback, restError, jsonError, dialogCallback);
+		return this;
+	}
+	
+	public RestClient call(final RestCallback restCallback) {
+		this.call(restMethod, restCallback, null, null, dialogCallback);
+		return this;
+	}
+	
+	public RestClient call(final RestCallback restCallback, final RestError restError) {
+		this.call(restMethod, restCallback, restError, null, dialogCallback);
+		return this;
+	}
+	
+	public RestClient call(final RestCallback restCallback, final RestError restError, final JSONError jsonError) {
+		this.call(restMethod, restCallback, restError, jsonError, dialogCallback);
+		return this;
+	}
+	
+	private void call(final RestMethod restMethod, final RestCallback restCallback,
+			final RestError restError, final JSONError jsonError,
+			final DialogCallback dialogCallback) {
+		try {
+			if (dialogCallback != null)
+				dialogCallback.openLoadingDialog();
+			this.checkParams();
+			String iurl = active_domain + MapFormat.format(url, urlParts);
+			Log.d("URL", iurl);
+			Log.d("URL-PARAMS", urlParams.toString());
+			
+			switch(restMethod){
+			case GET:
+				iurl += urlSafeParams();
+				aq.ajax(iurl, String.class, new RestAjaxCallback(context, restCallback, restError, jsonError, dialogCallback) );
+				break;
+			case PUT:
+				aq.put(iurl, new JSONObject(urlParams), String.class, new RestAjaxCallback(context, restCallback, restError, jsonError, dialogCallback) );
+				break;
+			case POST:
+				aq.ajax(iurl, urlParams, String.class, new RestAjaxCallback(context, restCallback, restError, jsonError, dialogCallback) );
+				break;
+			case DELETE:
+				iurl += urlSafeParams();
+				aq.delete(iurl, String.class, new RestAjaxCallback(context, restCallback, restError, jsonError, dialogCallback) );
+				break;
+			}
+			
 		} catch (RestUrlParameterException e) {
 			Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
 		}
 	}
 
+	private String urlSafeParams(){
+		StringBuilder sb = new StringBuilder();
+		boolean f = true;
+		for(Map.Entry<String, String> kvp: urlParams.entrySet()){
+			String separator = "&";
+			if(f){
+				f= false;
+				separator = "?";
+			}
+			sb.append(separator+kvp.getKey()+"="+kvp.toString());
+		}
+		return sb.toString();
+	}
+	
 }

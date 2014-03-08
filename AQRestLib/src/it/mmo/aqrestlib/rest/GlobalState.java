@@ -1,6 +1,6 @@
 package it.mmo.aqrestlib.rest;
 
-import it.mmo.aqrestlib.rest.objectmodel.UrlManager;
+import it.mmo.aqrestlib.rest.customize.UrlManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
