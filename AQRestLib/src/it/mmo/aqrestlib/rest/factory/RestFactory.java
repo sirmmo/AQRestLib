@@ -1,5 +1,10 @@
 package it.mmo.aqrestlib.rest.factory;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,6 +26,10 @@ public abstract class RestFactory {
 	}
 	
 	public RestFactory getRemoteConfiguration(){
+		ExecutorService executor = Executors.newFixedThreadPool(10);
+		Callable<JSONObject> c = new InnerRunnable();
+		Future<JSONObject> j = executor.submit(c);
+		while(!j.isDone());
 		return this;
 	}
 	
@@ -30,4 +39,12 @@ public abstract class RestFactory {
 	}
 	
 	public abstract RestClient getClient(String name);
+	
+	public class InnerRunnable implements Callable<JSONObject> {
+		  @Override
+		  public JSONObject call() throws Exception {
+		    return new JSONObject();
+		  }
+
+		} 
 }
